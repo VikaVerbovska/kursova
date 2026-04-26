@@ -4,7 +4,7 @@
 from pathlib import Path
 
 # Шляхи
-BASE_DIR = Path(__file__).parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / 'data' / 'yoochoose'
 MODELS_DIR = BASE_DIR / 'models'
 FIGURES_DIR = BASE_DIR / 'figures'
@@ -15,16 +15,20 @@ for dir_path in [DATA_DIR, MODELS_DIR, FIGURES_DIR, REPORTS_DIR]:
     dir_path.mkdir(parents=True, exist_ok=True)  # exist_ok=True дозволяє пропустити якщо папка вже є
 
 # Параметри даних
-MAX_SEQUENCE_LENGTH = 9  # максимальна довжина сесії
+MAX_SEQUENCE_LENGTH = 20  # максимальна довжина сесії
 MIN_SEQUENCE_LENGTH = 2    # мінімальна довжина сесії
 EMBEDDING_DIM = 50         # розмір ембеддінгів
 
 # Параметри моделей
 LSTM_UNITS = 64
-DROPOUT_RATE = 0.3
+DROPOUT_RATE = 0.4
+RECURRENT_DROPOUT = 0.2    # новий: dropout всередині LSTM
+L2_REG = 1e-5
 BATCH_SIZE = 256
 EPOCHS = 20
 LEARNING_RATE = 0.001
+
+USE_CLASS_WEIGHTS = True   # автоматичне зважування класів у .fit()
 
 # Випадкове зерно для відтворюваності
 RANDOM_SEED = 42

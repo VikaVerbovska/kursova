@@ -33,15 +33,12 @@ def extract_session_features(clicks, buys):
     
     # 2. ОЗНАКИ ПОКУПОК
     if len(buys) > 0:
-        purchase_features = buys.groupby('Session_ID').agg(
-            has_purchase=('Session_ID', 'size'),
-            num_purchases=('Session_ID', 'size'),
-            total_price=('Price', 'sum') if 'Price' in buys.columns else None,
-            avg_price=('Price', 'mean') if 'Price' in buys.columns else None
-        ).reset_index()
-        
-        # Перейменовуємо
-        purchase_features = purchase_features.rename(columns={'has_purchase': 'has_purchase_temp'})
+        agg_dict = {'num_purchases': ('Session_ID', 'size')}
+        if 'Price' in buys.columns:
+            agg_dict['total_price'] = ('Price', 'sum')
+            agg_dict['avg_price'] = ('Price', 'mean')
+
+        purchase_features = buys.groupby('Session_ID').agg(**agg_dict).reset_index()
         purchase_features['has_purchase'] = 1
         purchase_features = purchase_features.drop('has_purchase_temp', axis=1)
         
@@ -50,16 +47,18 @@ def extract_session_features(clicks, buys):
     else:
         features['has_purchase'] = 0
         features['num_purchases'] = 0
-        if 'total_price' in features.columns:
-            features['total_price'] = 0
-        if 'avg_price' in features.columns:
-            features['avg_price'] = 0
+        features['total_price'] = 0.0
+        features['avg_price'] = 0.0
     
     # Заповнюємо NaN
     features['has_purchase'] = features['has_purchase'].fillna(0).astype(int)
     features['num_purchases'] = features['num_purchases'].fillna(0).astype(int)
+
+    if 'total_price' in features.columns:
+        features['total_price'] = features['total_price'].fillna(0.0)
+    if 'avg_price' in features.columns:
+        features['avg_price'] = features['avg_price'].fillna(0.0)
     
-    # 3. ДОДАТКОВІ ОЗНАКИ
     # Частота кліків (кліки/хвилину)
     features['click_frequency'] = np.where(
         features['session_duration_seconds'] > 0,
@@ -69,6 +68,12 @@ def extract_session_features(clicks, buys):
     
     # Різноманітність (унікальні товари / загальна кількість)
     features['diversity'] = features['unique_items'] / features['session_length']
+
+    features['diversity'] = np.where(
+        features['session_length'] > 0,
+        features['unique_items'] / features['session_length'],
+        0
+    )
     
     # Повторюваність (1 - різноманітність)
     features['repeat_ratio'] = 1 - features['diversity']
